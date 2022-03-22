@@ -1,27 +1,34 @@
 <?php
 
-namespace Drupal\acquia_cms_tour\Form;
+namespace Drupal\acquia_cms_tour\Plugin\AcquiaCmsTour;
 
+use Drupal\acquia_cms_tour\Form\AcquiaCMSDashboardBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
 /**
- * Provides a form to configure the Recaptcha module.
+ * Plugin implementation of the acquia_cms_tour.
+ *
+ * @AcquiaCmsTour(
+ *   id = "google_analytics",
+ *   label = @Translation("Google Analytics"),
+ *   weight = 4
+ * )
  */
-final class RecaptchaForm extends AcquiaCMSDashboardBase {
+class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
 
   /**
    * Provides module name.
    *
    * @var string
    */
-  protected $module = 'recaptcha';
+  protected $module = 'google_analytics';
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'acquia_cms_recaptcha_form';
+    return 'acquia_cms_google_analytics_form';
   }
 
   /**
@@ -29,7 +36,7 @@ final class RecaptchaForm extends AcquiaCMSDashboardBase {
    */
   protected function getEditableConfigNames() {
     return [
-      'recaptcha.settings',
+      'google_analytics.settings',
     ];
   }
 
@@ -41,14 +48,14 @@ final class RecaptchaForm extends AcquiaCMSDashboardBase {
     $module = $this->module;
     if ($this->isModuleEnabled()) {
       $configured = $this->getConfigurationState();
-
       if ($configured) {
         $form['check_icon'] = [
           '#prefix' => '<span class= "dashboard-check-icon">',
           '#suffix' => "</span>",
         ];
       }
-      $module_path = $this->module_handler->getModule($module)->getPathname();
+
+      $module_path = $this->moduleHandler->getModule($module)->getPathname();
       $module_info = $this->infoParser->parse($module_path);
       $form[$module] = [
         '#type' => 'details',
@@ -56,20 +63,14 @@ final class RecaptchaForm extends AcquiaCMSDashboardBase {
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       ];
-      $form[$module]['site_key'] = [
+
+      $form[$module]['web_property_id'] = [
         '#type' => 'textfield',
         '#required' => TRUE,
-        '#title' => $this->t('Site key'),
-        '#placeholder' => '1234abcd',
-        '#default_value' => $this->config('recaptcha.settings')->get('site_key'),
+        '#title' => $this->t('Web Property ID'),
+        '#placeholder' => 'UA-xxx-xxx-xxx',
+        '#default_value' => $this->config('google_analytics.settings')->get('account'),
         '#prefix' => '<div class= "dashboard-fields-wrapper">' . $module_info['description'],
-      ];
-      $form[$module]['secret_key'] = [
-        '#type' => 'textfield',
-        '#required' => TRUE,
-        '#title' => $this->t('Secret key'),
-        '#placeholder' => '1234abcd',
-        '#default_value' => $this->config('recaptcha.settings')->get('secret_key'),
         '#suffix' => "</div>",
       ];
       $form[$module]['actions']['submit'] = [
@@ -102,20 +103,21 @@ final class RecaptchaForm extends AcquiaCMSDashboardBase {
           '#suffix' => "</span></div>",
         ];
       }
+      return $form;
     }
-    return $form;
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $recaptcha_site_key = $form_state->getValue(['site_key']);
-    $recaptcha_secret_key = $form_state->getValue(['secret_key']);
-    $this->config('recaptcha.settings')->set('site_key', $recaptcha_site_key)->save();
-    $this->config('recaptcha.settings')->set('secret_key', $recaptcha_secret_key)->save();
-    $this->setConfigurationState();
+    $property_id = $form_state->getValue(['web_property_id']);
+    $this->config('google_analytics.settings')->set('account', $property_id)->save();
+    $this->state->set('google_analytics_progress', TRUE);
     $this->messenger()->addStatus('The configuration options have been saved.');
+
+    // Update state.
+    $this->setConfigurationState();
   }
 
   /**
@@ -129,9 +131,8 @@ final class RecaptchaForm extends AcquiaCMSDashboardBase {
    * {@inheritdoc}
    */
   public function checkMinConfiguration() {
-    $site_key = $this->config('recaptcha.settings')->get('site_key');
-    $secret_key = $this->config('recaptcha.settings')->get('secret_key');
-    return $site_key &&  $secret_key;
+    $account = $this->config('google_analytics.settings')->get('account');
+    return $account ? TRUE : FALSE;
   }
 
 }
