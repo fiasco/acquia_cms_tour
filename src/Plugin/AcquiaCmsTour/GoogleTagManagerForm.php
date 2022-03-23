@@ -1,27 +1,34 @@
 <?php
 
-namespace Drupal\acquia_cms_tour\Form;
+namespace Drupal\acquia_cms_tour\Plugin\AcquiaCmsTour;
 
+use Drupal\acquia_cms_tour\Form\AcquiaCMSDashboardBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
 /**
- * Provides a form to configure the Google Analytics module.
+ * Plugin implementation of the acquia_cms_tour.
+ *
+ * @AcquiaCmsTour(
+ *   id = "google_tag",
+ *   label = @Translation("Google TagManager"),
+ *   weight = 5
+ * )
  */
-final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
+class GoogleTagManagerForm extends AcquiaCMSDashboardBase {
 
   /**
    * Provides module name.
    *
    * @var string
    */
-  protected $module = 'google_analytics';
+  protected $module = 'google_tag';
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'acquia_cms_google_analytics_form';
+    return 'acquia_cms_google_tag_manager_form';
   }
 
   /**
@@ -29,7 +36,7 @@ final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
    */
   protected function getEditableConfigNames() {
     return [
-      'google_analytics.settings',
+      'google_tag.settings',
     ];
   }
 
@@ -47,8 +54,7 @@ final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
           '#suffix' => "</span>",
         ];
       }
-
-      $module_path = $this->module_handler->getModule($module)->getPathname();
+      $module_path = $this->moduleHandler->getModule($module)->getPathname();
       $module_info = $this->infoParser->parse($module_path);
       $form[$module] = [
         '#type' => 'details',
@@ -56,13 +62,12 @@ final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
       ];
-
-      $form[$module]['web_property_id'] = [
+      $form[$module]['snippet_parent_uri'] = [
         '#type' => 'textfield',
         '#required' => TRUE,
-        '#title' => $this->t('Web Property ID'),
-        '#placeholder' => 'UA-',
-        '#default_value' => $this->config('google_analytics.settings')->get('account'),
+        '#title' => $this->t('Snippet parent URI'),
+        '#attributes' => ['placeholder' => $this->t('public:/')],
+        '#default_value' => $this->config('google_tag.settings')->get('uri'),
         '#prefix' => '<div class= "dashboard-fields-wrapper">' . $module_info['description'],
         '#suffix' => "</div>",
       ];
@@ -96,21 +101,18 @@ final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
           '#suffix' => "</span></div>",
         ];
       }
-      return $form;
     }
+    return $form;
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $property_id = $form_state->getValue(['web_property_id']);
-    $this->config('google_analytics.settings')->set('account', $property_id)->save();
-    $this->state->set('google_analytics_progress', TRUE);
-    $this->messenger()->addStatus('The configuration options have been saved.');
-
-    // Update state.
+    $snippet_parent_uri = $form_state->getValue(['snippet_parent_uri']);
+    $this->config('google_tag.settings')->set('uri', $snippet_parent_uri)->save();
     $this->setConfigurationState();
+    $this->messenger()->addStatus('The configuration options have been saved.');
   }
 
   /**
@@ -123,9 +125,9 @@ final class GoogleAnalyticsForm extends AcquiaCMSDashboardBase {
   /**
    * {@inheritdoc}
    */
-  public function checkMinConfiguration() {
-    $account = $this->config('google_analytics.settings')->get('account');
-    return $account ? TRUE : FALSE;
+  public function checkMinConfiguration(): bool {
+    $uri = $this->config('google_tag.settings')->get('uri');
+    return (bool) $uri;
   }
 
 }
