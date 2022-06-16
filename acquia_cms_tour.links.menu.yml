@@ -7,3 +7,9 @@ acquia_cms_tour.tour:
   options:
     attributes:
       class: ['toolbar-icon', 'toolbar-icon-help-main']
+
+acquia_cms_tour.cms_dashboard:
+  title: Get started
+  description: Get started with an easy, central place to configure Acquia CMS.
+  parent: acquia_cms_tour.tour
+  route_name: acquia_cms_tour.enabled_modules
